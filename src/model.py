@@ -9,25 +9,29 @@ class MyModel(nn.Module):
         super().__init__()
 
         # YOUR CODE HERE
-        self.feature_extractor = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=256, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(in_channels=256, out_channels=1000, kernel_size=3, stride=1,
-                      padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Flatten()
-        )
-
-        # Define the classifier layers
-        self.classifier = nn.Sequential(
-            nn.Linear(1000, 7000),
-            nn.ReLU(),
-            nn.Dropout(p=dropout),
-            nn.Linear(7000, num_classes),
-            nn.Softmax(dim=1)
-        )
+        # Convolutional layers
+        self.conv1 = nn.Conv2d(3, 16, 3, padding=1)
+        self.conv2 = nn.Conv2d(16, 32, 3, padding=1)
+        self.conv3 = nn.Conv2d(32, 64, 3, padding=1)
+        self.conv4 = nn.Conv2d(64, 128, 3, padding=1)
+        self.conv5 = nn.Conv2d(128, 256, 3, padding=1)
+        
+        
+        # Max pooling layer (divides the image by a factor of 2)
+        self.pool = nn.MaxPool2d(2, 2)
+        
+        # Fully connected layers
+        self.fc1 = nn.Linear(7 * 7 * 256, 256)
+        self.fc2 = nn.Linear(256, num_classes)
+        # Dropout
+        self.dropout = nn.Dropout(dropout)
+        
+        # Activation function
+        self.relu = nn.LeakyReLU()
+        
+        # Batch norm
+        self.batch_norm2d = nn.BatchNorm2d(128)
+        self.batch_norm1d = nn.BatchNorm1d(256)
         # Define a CNN architecture. Remember to use the variable num_classes
         # to size appropriately the output of your classifier, and if you use
         # the Dropout layer, use the variable "dropout" to indicate how much
@@ -37,8 +41,19 @@ class MyModel(nn.Module):
         # YOUR CODE HERE: process the input tensor through the
         # feature extractor, the pooling and the final linear
         # layers (if appropriate for the architecture chosen)
-        features = self.feature_extractor(x)
-        output = self.classifier(features)
+        x = self.pool(self.relu(self.conv1(x)))
+        x = self.pool(self.relu(self.conv2(x)))
+        x = self.pool(self.relu(self.conv3(x)))
+        x = self.pool(self.relu(self.conv4(x)))
+        x = self.batch_norm2d(x)
+        x = self.pool(self.relu(self.conv5(x)))
+        x = x.view(-1, 7 * 7 * 256)
+        x = self.dropout(x)
+        x = self.relu(self.fc1(x))
+        x = self.batch_norm1d(x)
+        x = self.dropout(x)
+        x = self.fc2(x)
+        
         return x
 
 
@@ -60,7 +75,7 @@ def test_model_construction(data_loaders):
     model = MyModel(num_classes=23, dropout=0.3)
 
     dataiter = iter(data_loaders["train"])
-    images, labels = dataiter.next()
+    images, labels = next(dataiter)
 
     out = model(images)
 

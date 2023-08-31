@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim
+from torch.types import Device
 
 
 def get_loss():
@@ -10,7 +11,9 @@ def get_loss():
     """
 
     # YOUR CODE HERE: select a loss appropriate for classification
-    loss  = # YOUR CODE HERE
+    loss  = nn.CrossEntropyLoss()
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    loss.to(device)
 
     return loss
 
@@ -36,6 +39,8 @@ def get_optimizer(
         # optimizer. Use the input parameters learning_rate, momentum
         # and weight_decay
         opt = torch.optim.SGD(
+            model.parameters(), lr= learning_rate, momentum=momentum,
+            weight_decay= weight_decay
             # YOUR CODE HERE
         )
 
@@ -44,6 +49,8 @@ def get_optimizer(
         # optimizer. Use the input parameters learning_rate, momentum
         # and weight_decay
         opt = torch.optim.Adam(
+            model.parameters(), lr=learning_rate,
+            weight_decay= weight_decay
             # YOUR CODE HERE
         )
     else:
